@@ -3,17 +3,32 @@
   "short_name": "PWA sample",
   "icons": [
     {
+      "src": "img/launcher-icon-48x48.png",
+      "type": "image/png",
+      "sizes": "48x48"
+    },
+    {
       "src": "img/launcher-icon-96x96.png",
       "type": "image/png",
       "sizes": "96x96"
     },
     {
+      "src": "img/launcher-icon-144x144.png",
+      "type": "image/png",
+      "sizes": "144x144"
+    },
+    {
       "src": "img/launcher-icon-192x192.png",
       "type": "image/png",
       "sizes": "192x192"
+    },
+    {
+      "src": "img/launcher-icon-256x256.png",
+      "type": "image/png",
+      "sizes": "256x256"
     }
   ],
-  "start_url": "index.html?launcher=true",
+  "start_url": "/?utm_source=homescreen",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#ff0044",
