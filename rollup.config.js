@@ -6,7 +6,7 @@ import postcss from 'postcss'
 import postcssCssnext from 'postcss-cssnext'
 
 export default {
-  input: 'index.js',
+  input: 'src/app.js',
   output: {
     file: 'public/bundle.js',
     sourceMap: false,
@@ -32,7 +32,6 @@ function cssnext (tagName, css) {
   // A small hack: it passes :scope as :root to PostCSS.
   // This make it easy to use css variables inside tags.
   css = css.replace(/:scope/g, ':root')
-console.info(css)
   css = postcss([postcssCssnext]).process(css).css
   css = css.replace(/:root/g, ':scope')
   return css

@@ -23,9 +23,9 @@
     "build:js": "rollup -c",
     "build:html": "cp index.html public/",
     "watch": "chokidar 'src/**' -c 'npm run build'",
-    "server": "browser-sync start --files 'dist/*, index.html' --server"
+    "server": "browser-sync start --files 'public/*, public/index.html' --server"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "author": "k-kuwahara",
+  "license": "MIT"
 }

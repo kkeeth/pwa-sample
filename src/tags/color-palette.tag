@@ -44,8 +44,8 @@
     }
     div {
       display: inline-block;
-      width: 2em;
-      height: 2em;
+      width: 2.8em;
+      height: 2.8em;
       position: relative;
       cursor: pointer;
       z-index: 1;
