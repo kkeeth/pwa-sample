@@ -31,9 +31,14 @@
       "src": "img/launcher-icon-256x256.png",
       "type": "image/png",
       "sizes": "256x256"
+    },
+    {
+      "src": "img/launcher-icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ],
-  "start_url": "/?utm_source=homescreen",
+  "start_url": "/fin-produts/?utm_source=homescreen",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#ff0044",
