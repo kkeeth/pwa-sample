@@ -3,11 +3,12 @@ var urlsToCache = [
   '/',
   '/public/sw.js'
 ];
-self.addEventListener('fetch', function(event) {
+
+self.addEventListener('fetch', (event) => {
   // インストール処理
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(function(cache) {
+      .then((cache) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
