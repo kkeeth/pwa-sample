@@ -17,10 +17,16 @@ $ npm run build
 # boot app
 $ npm run server
 
+# boot app & development
+$ npm start
+
 # development
 $ npm run watch
-
 ```
+
+After open this url http://localhost:3000/public/
+
+※ The port number may change.
 
 I use this application as it is.
 

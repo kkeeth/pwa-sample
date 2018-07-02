@@ -1,11 +1,16 @@
 {
-  "name": "PWA sample of supporterzcolab no439",
+  "name": "PWA sample of supporterzcolab 439",
   "short_name": "PWA sample",
   "icons": [
     {
       "src": "img/launcher-icon-48x48.png",
       "type": "image/png",
       "sizes": "48x48"
+    },
+    {
+      "src": "img/launcher-icon-72x72.png",
+      "type": "image/png",
+      "sizes": "72x72"
     },
     {
       "src": "img/launcher-icon-96x96.png",
@@ -26,9 +31,14 @@
       "src": "img/launcher-icon-256x256.png",
       "type": "image/png",
       "sizes": "256x256"
+    },
+    {
+      "src": "img/launcher-icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ],
-  "start_url": "/?utm_source=homescreen",
+  "start_url": "/fin-produts/?utm_source=homescreen",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#ff0044",
