@@ -30,11 +30,23 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
-        if (key !== cacheName && key !== dataCacheName) {
+        if (key !== CACHE_NAME && key !== dataCacheName) {
           console.log('[ServiceWorker] Removing old cache', key)
           return caches.delete(key)
         }
       }))
     })
   )
+})
+
+self.addEventListener('beforeinstallprompt', (e) => {
+  e.userChoice.then((choiceResult) => {
+    console.log(choiceResult.outcome)
+    if (choiceResult.outcome == 'dismissed') {
+      console.log('User cancelled home screen install')
+    }
+    else {
+      console.log('User added to home screen')
+    }
+  })
 })
