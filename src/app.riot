@@ -1,0 +1,34 @@
+<app style={ `background: ${ selectedColor }` }>
+
+  <color-palette value={ selectedColor } handle-click={ change } />
+
+  <p>Click the color.</p>
+
+  <script>
+    import ColorPalette from './components/color-palette.riot'
+
+    export default {
+      components: {
+        ColorPalette
+      },
+      selectedColor: '',
+      change(e) {
+        this.selectedColor = e.target.dataset.color
+        this.update()
+      }
+    }
+  </script>
+
+  <style>
+    :host {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      padding: 1em;
+      text-align: center;
+      background: #eee;
+    }
+  </style>
+</app>
