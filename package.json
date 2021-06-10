@@ -5,16 +5,16 @@
   "main": "mixin.js",
   "dependencies": {
     "chokidar-cli": "^2.1.0",
-    "riot": "^4.13.4"
+    "riot": "^5.4.4"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^14.0.0",
-    "@rollup/plugin-node-resolve": "^8.4.0",
-    "browser-sync": "^2.26.12",
-    "postcss": "^7.0.32",
+    "@rollup/plugin-commonjs": "^19.0.0",
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "browser-sync": "^2.26.14",
+    "postcss": "^8.3.1",
     "postcss-cssnext": "^3.1.0",
-    "rollup": "^2.23.0",
-    "rollup-plugin-riot": "^4.0.2"
+    "rollup": "^2.51.1",
+    "rollup-plugin-riot": "^5.0.0"
   },
   "scripts": {
     "start": "npm run watch & npm run server",
