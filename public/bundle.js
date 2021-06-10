@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  /* Riot v4.13.4, @license MIT */
+  /* Riot v5.4.4, @license MIT */
   /**
    * Convert a string from camel case to dash-case
    * @param   {string} string - probably a component tag name
@@ -62,22 +62,56 @@
    */
 
   function clearChildren(children) {
-    Array.from(children).forEach(removeNode);
+    Array.from(children).forEach(removeChild);
   }
   /**
-   * Remove a node from the DOM
-   * @param   {HTMLElement} node - target node
+   * Remove a node
+   * @param {HTMLElement}node - node to remove
    * @returns {undefined}
    */
 
-  function removeNode(node) {
-    const {
-      parentNode
-    } = node;
-    if (node.remove) node.remove();
-    /* istanbul ignore else */
-    else if (parentNode) parentNode.removeChild(node);
-  }
+  const removeChild = node => node && node.parentNode && node.parentNode.removeChild(node);
+  /**
+   * Insert before a node
+   * @param {HTMLElement} newNode - node to insert
+   * @param {HTMLElement} refNode - ref child
+   * @returns {undefined}
+   */
+
+  const insertBefore = (newNode, refNode) => refNode && refNode.parentNode && refNode.parentNode.insertBefore(newNode, refNode);
+  /**
+   * Replace a node
+   * @param {HTMLElement} newNode - new node to add to the DOM
+   * @param {HTMLElement} replaced - node to replace
+   * @returns {undefined}
+   */
+
+  const replaceChild = (newNode, replaced) => replaced && replaced.parentNode && replaced.parentNode.replaceChild(newNode, replaced);
+
+  // Riot.js constants that can be used accross more modules
+  const COMPONENTS_IMPLEMENTATION_MAP$1 = new Map(),
+        DOM_COMPONENT_INSTANCE_PROPERTY$1 = Symbol('riot-component'),
+        PLUGINS_SET$1 = new Set(),
+        IS_DIRECTIVE = 'is',
+        MOUNT_METHOD_KEY = 'mount',
+        UPDATE_METHOD_KEY = 'update',
+        UNMOUNT_METHOD_KEY = 'unmount',
+        SHOULD_UPDATE_KEY = 'shouldUpdate',
+        ON_BEFORE_MOUNT_KEY = 'onBeforeMount',
+        ON_MOUNTED_KEY = 'onMounted',
+        ON_BEFORE_UPDATE_KEY = 'onBeforeUpdate',
+        ON_UPDATED_KEY = 'onUpdated',
+        ON_BEFORE_UNMOUNT_KEY = 'onBeforeUnmount',
+        ON_UNMOUNTED_KEY = 'onUnmounted',
+        PROPS_KEY = 'props',
+        STATE_KEY = 'state',
+        SLOTS_KEY = 'slots',
+        ROOT_KEY = 'root',
+        IS_PURE_SYMBOL = Symbol('pure'),
+        IS_COMPONENT_UPDATING = Symbol('is_updating'),
+        PARENT_KEY_SYMBOL = Symbol('parent'),
+        ATTRIBUTES_KEY_SYMBOL = Symbol('attributes'),
+        TEMPLATE_KEY_SYMBOL = Symbol('template');
 
   const EACH = 0;
   const IF = 1;
@@ -103,398 +137,85 @@
     VALUE
   };
 
+  const HEAD_SYMBOL = Symbol('head');
+  const TAIL_SYMBOL = Symbol('tail');
+
+  /**
+   * Create the <template> fragments comment nodes
+   * @return {Object} {{head: Comment, tail: Comment}}
+   */
+
+  function createHeadTailPlaceholders() {
+    const head = document.createComment('fragment head');
+    const tail = document.createComment('fragment tail');
+    head[HEAD_SYMBOL] = true;
+    tail[TAIL_SYMBOL] = true;
+    return {
+      head,
+      tail
+    };
+  }
+
   /**
    * Create the template meta object in case of <template> fragments
    * @param   {TemplateChunk} componentTemplate - template chunk object
    * @returns {Object} the meta property that will be passed to the mount function of the TemplateChunk
    */
+
   function createTemplateMeta(componentTemplate) {
     const fragment = componentTemplate.dom.cloneNode(true);
+    const {
+      head,
+      tail
+    } = createHeadTailPlaceholders();
     return {
       avoidDOMInjection: true,
       fragment,
-      children: Array.from(fragment.childNodes)
+      head,
+      tail,
+      children: [head, ...Array.from(fragment.childNodes), tail]
     };
   }
 
-  const {
-    indexOf,
-    slice
-  } = [];
+  /**
+   * Get the current <template> fragment children located in between the head and tail comments
+   * @param {Comment} head - head comment node
+   * @param {Comment} tail - tail comment node
+   * @return {Array[]} children list of the nodes found in this template fragment
+   */
 
-  const append = (get, parent, children, start, end, before) => {
-    const isSelect = ('selectedIndex' in parent);
-    let noSelection = isSelect;
-
-    while (start < end) {
-      const child = get(children[start], 1);
-      parent.insertBefore(child, before);
-
-      if (isSelect && noSelection && child.selected) {
-        noSelection = !noSelection;
-        let {
-          selectedIndex
-        } = parent;
-        parent.selectedIndex = selectedIndex < 0 ? start : indexOf.call(parent.querySelectorAll('option'), child);
-      }
-
-      start++;
-    }
-  };
-  const eqeq = (a, b) => a == b;
-  const identity = O => O;
-  const indexOf$1 = (moreNodes, moreStart, moreEnd, lessNodes, lessStart, lessEnd, compare) => {
-    const length = lessEnd - lessStart;
-    /* istanbul ignore if */
-
-    if (length < 1) return -1;
-
-    while (moreEnd - moreStart >= length) {
-      let m = moreStart;
-      let l = lessStart;
-
-      while (m < moreEnd && l < lessEnd && compare(moreNodes[m], lessNodes[l])) {
-        m++;
-        l++;
-      }
-
-      if (l === lessEnd) return moreStart;
-      moreStart = m + 1;
-    }
-
-    return -1;
-  };
-  const isReversed = (futureNodes, futureEnd, currentNodes, currentStart, currentEnd, compare) => {
-    while (currentStart < currentEnd && compare(currentNodes[currentStart], futureNodes[futureEnd - 1])) {
-      currentStart++;
-      futureEnd--;
-    }
-    return futureEnd === 0;
-  };
-  const next = (get, list, i, length, before) => i < length ? get(list[i], 0) : 0 < i ? get(list[i - 1], -0).nextSibling : before;
-  const remove = (get, children, start, end) => {
-    while (start < end) drop(get(children[start++], -1));
-  }; // - - - - - - - - - - - - - - - - - - -
-  // diff related constants and utilities
-  // - - - - - - - - - - - - - - - - - - -
-
-  const DELETION = -1;
-  const INSERTION = 1;
-  const SKIP = 0;
-  const SKIP_OND = 50;
-
-  const HS = (futureNodes, futureStart, futureEnd, futureChanges, currentNodes, currentStart, currentEnd, currentChanges) => {
-    let k = 0;
-    /* istanbul ignore next */
-
-    let minLen = futureChanges < currentChanges ? futureChanges : currentChanges;
-    const link = Array(minLen++);
-    const tresh = Array(minLen);
-    tresh[0] = -1;
-
-    for (let i = 1; i < minLen; i++) tresh[i] = currentEnd;
-
-    const nodes = currentNodes.slice(currentStart, currentEnd);
-
-    for (let i = futureStart; i < futureEnd; i++) {
-      const index = nodes.indexOf(futureNodes[i]);
-
-      if (-1 < index) {
-        const idxInOld = index + currentStart;
-        k = findK(tresh, minLen, idxInOld);
-        /* istanbul ignore else */
-
-        if (-1 < k) {
-          tresh[k] = idxInOld;
-          link[k] = {
-            newi: i,
-            oldi: idxInOld,
-            prev: link[k - 1]
-          };
-        }
-      }
-    }
-
-    k = --minLen;
-    --currentEnd;
-
-    while (tresh[k] > currentEnd) --k;
-
-    minLen = currentChanges + futureChanges - k;
-    const diff = Array(minLen);
-    let ptr = link[k];
-    --futureEnd;
-
-    while (ptr) {
-      const {
-        newi,
-        oldi
-      } = ptr;
-
-      while (futureEnd > newi) {
-        diff[--minLen] = INSERTION;
-        --futureEnd;
-      }
-
-      while (currentEnd > oldi) {
-        diff[--minLen] = DELETION;
-        --currentEnd;
-      }
-
-      diff[--minLen] = SKIP;
-      --futureEnd;
-      --currentEnd;
-      ptr = ptr.prev;
-    }
-
-    while (futureEnd >= futureStart) {
-      diff[--minLen] = INSERTION;
-      --futureEnd;
-    }
-
-    while (currentEnd >= currentStart) {
-      diff[--minLen] = DELETION;
-      --currentEnd;
-    }
-
-    return diff;
-  }; // this is pretty much the same petit-dom code without the delete map part
-  // https://github.com/yelouafi/petit-dom/blob/bd6f5c919b5ae5297be01612c524c40be45f14a7/src/vdom.js#L556-L561
-
-
-  const OND = (futureNodes, futureStart, rows, currentNodes, currentStart, cols, compare) => {
-    const length = rows + cols;
-    const v = [];
-    let d, k, r, c, pv, cv, pd;
-
-    outer: for (d = 0; d <= length; d++) {
-      /* istanbul ignore if */
-      if (d > SKIP_OND) return null;
-      pd = d - 1;
-      /* istanbul ignore next */
-
-      pv = d ? v[d - 1] : [0, 0];
-      cv = v[d] = [];
-
-      for (k = -d; k <= d; k += 2) {
-        if (k === -d || k !== d && pv[pd + k - 1] < pv[pd + k + 1]) {
-          c = pv[pd + k + 1];
-        } else {
-          c = pv[pd + k - 1] + 1;
-        }
-
-        r = c - k;
-
-        while (c < cols && r < rows && compare(currentNodes[currentStart + c], futureNodes[futureStart + r])) {
-          c++;
-          r++;
-        }
-
-        if (c === cols && r === rows) {
-          break outer;
-        }
-
-        cv[d + k] = c;
-      }
-    }
-
-    const diff = Array(d / 2 + length / 2);
-    let diffIdx = diff.length - 1;
-
-    for (d = v.length - 1; d >= 0; d--) {
-      while (c > 0 && r > 0 && compare(currentNodes[currentStart + c - 1], futureNodes[futureStart + r - 1])) {
-        // diagonal edge = equality
-        diff[diffIdx--] = SKIP;
-        c--;
-        r--;
-      }
-
-      if (!d) break;
-      pd = d - 1;
-      /* istanbul ignore next */
-
-      pv = d ? v[d - 1] : [0, 0];
-      k = c - r;
-
-      if (k === -d || k !== d && pv[pd + k - 1] < pv[pd + k + 1]) {
-        // vertical edge = insertion
-        r--;
-        diff[diffIdx--] = INSERTION;
-      } else {
-        // horizontal edge = deletion
-        c--;
-        diff[diffIdx--] = DELETION;
-      }
-    }
-
-    return diff;
-  };
-
-  const applyDiff = (diff, get, parentNode, futureNodes, futureStart, currentNodes, currentStart, currentLength, before) => {
-    const live = [];
-    const length = diff.length;
-    let currentIndex = currentStart;
-    let i = 0;
-
-    while (i < length) {
-      switch (diff[i++]) {
-        case SKIP:
-          futureStart++;
-          currentIndex++;
-          break;
-
-        case INSERTION:
-          // TODO: bulk appends for sequential nodes
-          live.push(futureNodes[futureStart]);
-          append(get, parentNode, futureNodes, futureStart++, futureStart, currentIndex < currentLength ? get(currentNodes[currentIndex], 0) : before);
-          break;
-
-        case DELETION:
-          currentIndex++;
-          break;
-      }
-    }
-
-    i = 0;
-
-    while (i < length) {
-      switch (diff[i++]) {
-        case SKIP:
-          currentStart++;
-          break;
-
-        case DELETION:
-          // TODO: bulk removes for sequential nodes
-          if (-1 < live.indexOf(currentNodes[currentStart])) currentStart++;else remove(get, currentNodes, currentStart++, currentStart);
-          break;
-      }
-    }
-  };
-
-  const findK = (ktr, length, j) => {
-    let lo = 1;
-    let hi = length;
-
-    while (lo < hi) {
-      const mid = (lo + hi) / 2 >>> 0;
-      if (j < ktr[mid]) hi = mid;else lo = mid + 1;
-    }
-
-    return lo;
-  };
-
-  const smartDiff = (get, parentNode, futureNodes, futureStart, futureEnd, futureChanges, currentNodes, currentStart, currentEnd, currentChanges, currentLength, compare, before) => {
-    applyDiff(OND(futureNodes, futureStart, futureChanges, currentNodes, currentStart, currentChanges, compare) || HS(futureNodes, futureStart, futureEnd, futureChanges, currentNodes, currentStart, currentEnd, currentChanges), get, parentNode, futureNodes, futureStart, currentNodes, currentStart, currentLength, before);
-  };
-
-  const drop = node => (node.remove || dropChild).call(node);
-
-  function dropChild() {
-    const {
-      parentNode
-    } = this;
-    /* istanbul ignore else */
-
-    if (parentNode) parentNode.removeChild(this);
+  function getFragmentChildren(_ref) {
+    let {
+      head,
+      tail
+    } = _ref;
+    const nodes = walkNodes([head], head.nextSibling, n => n === tail, false);
+    nodes.push(tail);
+    return nodes;
   }
+  /**
+   * Recursive function to walk all the <template> children nodes
+   * @param {Array[]} children - children nodes collection
+   * @param {ChildNode} node - current node
+   * @param {Function} check - exit function check
+   * @param {boolean} isFilterActive - filter flag to skip nodes managed by other bindings
+   * @returns {Array[]} children list of the nodes found in this template fragment
+   */
 
-  /*! (c) 2018 Andrea Giammarchi (ISC) */
+  function walkNodes(children, node, check, isFilterActive) {
+    const {
+      nextSibling
+    } = node; // filter tail and head nodes together with all the nodes in between
+    // this is needed only to fix a really ugly edge case https://github.com/riot/riot/issues/2892
 
-  const domdiff = (parentNode, // where changes happen
-  currentNodes, // Array of current items/nodes
-  futureNodes, // Array of future items/nodes
-  options // optional object with one of the following properties
-  //  before: domNode
-  //  compare(generic, generic) => true if same generic
-  //  node(generic) => Node
-  ) => {
-    if (!options) options = {};
-    const compare = options.compare || eqeq;
-    const get = options.node || identity;
-    const before = options.before == null ? null : get(options.before, 0);
-    const currentLength = currentNodes.length;
-    let currentEnd = currentLength;
-    let currentStart = 0;
-    let futureEnd = futureNodes.length;
-    let futureStart = 0; // common prefix
-
-    while (currentStart < currentEnd && futureStart < futureEnd && compare(currentNodes[currentStart], futureNodes[futureStart])) {
-      currentStart++;
-      futureStart++;
-    } // common suffix
-
-
-    while (currentStart < currentEnd && futureStart < futureEnd && compare(currentNodes[currentEnd - 1], futureNodes[futureEnd - 1])) {
-      currentEnd--;
-      futureEnd--;
+    if (!isFilterActive && !node[HEAD_SYMBOL] && !node[TAIL_SYMBOL]) {
+      children.push(node);
     }
 
-    const currentSame = currentStart === currentEnd;
-    const futureSame = futureStart === futureEnd; // same list
-
-    if (currentSame && futureSame) return futureNodes; // only stuff to add
-
-    if (currentSame && futureStart < futureEnd) {
-      append(get, parentNode, futureNodes, futureStart, futureEnd, next(get, currentNodes, currentStart, currentLength, before));
-      return futureNodes;
-    } // only stuff to remove
-
-
-    if (futureSame && currentStart < currentEnd) {
-      remove(get, currentNodes, currentStart, currentEnd);
-      return futureNodes;
-    }
-
-    const currentChanges = currentEnd - currentStart;
-    const futureChanges = futureEnd - futureStart;
-    let i = -1; // 2 simple indels: the shortest sequence is a subsequence of the longest
-
-    if (currentChanges < futureChanges) {
-      i = indexOf$1(futureNodes, futureStart, futureEnd, currentNodes, currentStart, currentEnd, compare); // inner diff
-
-      if (-1 < i) {
-        append(get, parentNode, futureNodes, futureStart, i, get(currentNodes[currentStart], 0));
-        append(get, parentNode, futureNodes, i + currentChanges, futureEnd, next(get, currentNodes, currentEnd, currentLength, before));
-        return futureNodes;
-      }
-    }
-    /* istanbul ignore else */
-    else if (futureChanges < currentChanges) {
-        i = indexOf$1(currentNodes, currentStart, currentEnd, futureNodes, futureStart, futureEnd, compare); // outer diff
-
-        if (-1 < i) {
-          remove(get, currentNodes, currentStart, i);
-          remove(get, currentNodes, i + futureChanges, currentEnd);
-          return futureNodes;
-        }
-      } // common case with one replacement for many nodes
-    // or many nodes replaced for a single one
-
-    /* istanbul ignore else */
-
-
-    if (currentChanges < 2 || futureChanges < 2) {
-      append(get, parentNode, futureNodes, futureStart, futureEnd, get(currentNodes[currentStart], 0));
-      remove(get, currentNodes, currentStart, currentEnd);
-      return futureNodes;
-    } // the half match diff part has been skipped in petit-dom
-    // https://github.com/yelouafi/petit-dom/blob/bd6f5c919b5ae5297be01612c524c40be45f14a7/src/vdom.js#L391-L397
-    // accordingly, I think it's safe to skip in here too
-    // if one day it'll come out like the speediest thing ever to do
-    // then I might add it in here too
-    // Extra: before going too fancy, what about reversed lists ?
-    //        This should bail out pretty quickly if that's not the case.
-
-
-    if (currentChanges === futureChanges && isReversed(futureNodes, futureEnd, currentNodes, currentStart, currentEnd, compare)) {
-      append(get, parentNode, futureNodes, futureStart, futureEnd, next(get, currentNodes, currentEnd, currentLength, before));
-      return futureNodes;
-    } // last resort through a smart diff
-
-
-    smartDiff(get, parentNode, futureNodes, futureStart, futureEnd, futureChanges, currentNodes, currentStart, currentEnd, currentChanges, currentLength, compare, before);
-    return futureNodes;
-  };
+    if (!nextSibling || check(node)) return children;
+    return walkNodes(children, nextSibling, check, // activate the filters to skip nodes between <template> fragments that will be managed by other bindings
+    isFilterActive && !node[TAIL_SYMBOL] || nextSibling[HEAD_SYMBOL]);
+  }
 
   /**
    * Quick type checking
@@ -522,7 +243,7 @@
    */
 
   function isTemplate(el) {
-    return !isNil(el.content);
+    return el.tagName.toLowerCase() === 'template';
   }
   /**
    * Check that will be passed if its argument is a function
@@ -549,7 +270,7 @@
    */
 
   function isObject(value) {
-    return !isNil(value) && checkType(value, 'object');
+    return !isNil(value) && value.constructor === Object;
   }
   /**
    * Check if a value is null or undefined
@@ -561,8 +282,150 @@
     return value === null || value === undefined;
   }
 
+  /**
+   * ISC License
+   *
+   * Copyright (c) 2020, Andrea Giammarchi, @WebReflection
+   *
+   * Permission to use, copy, modify, and/or distribute this software for any
+   * purpose with or without fee is hereby granted, provided that the above
+   * copyright notice and this permission notice appear in all copies.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+   * REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+   * AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+   * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+   * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+   * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+   * PERFORMANCE OF THIS SOFTWARE.
+   */
+  // fork of https://github.com/WebReflection/udomdiff version 1.1.0
+  // due to https://github.com/WebReflection/udomdiff/pull/2
+
+  /* eslint-disable */
+
+  /**
+   * @param {Node[]} a The list of current/live children
+   * @param {Node[]} b The list of future children
+   * @param {(entry: Node, action: number) => Node} get
+   * The callback invoked per each entry related DOM operation.
+   * @param {Node} [before] The optional node used as anchor to insert before.
+   * @returns {Node[]} The same list of future children.
+   */
+
+  var udomdiff = ((a, b, get, before) => {
+    const bLength = b.length;
+    let aEnd = a.length;
+    let bEnd = bLength;
+    let aStart = 0;
+    let bStart = 0;
+    let map = null;
+
+    while (aStart < aEnd || bStart < bEnd) {
+      // append head, tail, or nodes in between: fast path
+      if (aEnd === aStart) {
+        // we could be in a situation where the rest of nodes that
+        // need to be added are not at the end, and in such case
+        // the node to `insertBefore`, if the index is more than 0
+        // must be retrieved, otherwise it's gonna be the first item.
+        const node = bEnd < bLength ? bStart ? get(b[bStart - 1], -0).nextSibling : get(b[bEnd - bStart], 0) : before;
+
+        while (bStart < bEnd) insertBefore(get(b[bStart++], 1), node);
+      } // remove head or tail: fast path
+      else if (bEnd === bStart) {
+          while (aStart < aEnd) {
+            // remove the node only if it's unknown or not live
+            if (!map || !map.has(a[aStart])) removeChild(get(a[aStart], -1));
+            aStart++;
+          }
+        } // same node: fast path
+        else if (a[aStart] === b[bStart]) {
+            aStart++;
+            bStart++;
+          } // same tail: fast path
+          else if (a[aEnd - 1] === b[bEnd - 1]) {
+              aEnd--;
+              bEnd--;
+            } // The once here single last swap "fast path" has been removed in v1.1.0
+            // https://github.com/WebReflection/udomdiff/blob/single-final-swap/esm/index.js#L69-L85
+            // reverse swap: also fast path
+            else if (a[aStart] === b[bEnd - 1] && b[bStart] === a[aEnd - 1]) {
+                // this is a "shrink" operation that could happen in these cases:
+                // [1, 2, 3, 4, 5]
+                // [1, 4, 3, 2, 5]
+                // or asymmetric too
+                // [1, 2, 3, 4, 5]
+                // [1, 2, 3, 5, 6, 4]
+                const node = get(a[--aEnd], -1).nextSibling;
+                insertBefore(get(b[bStart++], 1), get(a[aStart++], -1).nextSibling);
+                insertBefore(get(b[--bEnd], 1), node); // mark the future index as identical (yeah, it's dirty, but cheap 👍)
+                // The main reason to do this, is that when a[aEnd] will be reached,
+                // the loop will likely be on the fast path, as identical to b[bEnd].
+                // In the best case scenario, the next loop will skip the tail,
+                // but in the worst one, this node will be considered as already
+                // processed, bailing out pretty quickly from the map index check
+
+                a[aEnd] = b[bEnd];
+              } // map based fallback, "slow" path
+              else {
+                  // the map requires an O(bEnd - bStart) operation once
+                  // to store all future nodes indexes for later purposes.
+                  // In the worst case scenario, this is a full O(N) cost,
+                  // and such scenario happens at least when all nodes are different,
+                  // but also if both first and last items of the lists are different
+                  if (!map) {
+                    map = new Map();
+                    let i = bStart;
+
+                    while (i < bEnd) map.set(b[i], i++);
+                  } // if it's a future node, hence it needs some handling
+
+
+                  if (map.has(a[aStart])) {
+                    // grab the index of such node, 'cause it might have been processed
+                    const index = map.get(a[aStart]); // if it's not already processed, look on demand for the next LCS
+
+                    if (bStart < index && index < bEnd) {
+                      let i = aStart; // counts the amount of nodes that are the same in the future
+
+                      let sequence = 1;
+
+                      while (++i < aEnd && i < bEnd && map.get(a[i]) === index + sequence) sequence++; // effort decision here: if the sequence is longer than replaces
+                      // needed to reach such sequence, which would brings again this loop
+                      // to the fast path, prepend the difference before a sequence,
+                      // and move only the future list index forward, so that aStart
+                      // and bStart will be aligned again, hence on the fast path.
+                      // An example considering aStart and bStart are both 0:
+                      // a: [1, 2, 3, 4]
+                      // b: [7, 1, 2, 3, 6]
+                      // this would place 7 before 1 and, from that time on, 1, 2, and 3
+                      // will be processed at zero cost
+
+
+                      if (sequence > index - bStart) {
+                        const node = get(a[aStart], 0);
+
+                        while (bStart < index) insertBefore(get(b[bStart++], 1), node);
+                      } // if the effort wasn't good enough, fallback to a replace,
+                      // moving both source and target indexes forward, hoping that some
+                      // similar node will be found later on, to go back to the fast path
+                      else {
+                          replaceChild(get(b[bStart++], 1), get(a[aStart++], -1));
+                        }
+                    } // otherwise move the source forward, 'cause there's nothing to do
+                    else aStart++;
+                  } // this node has no meaning in the future list, so it's more than safe
+                  // to remove it, and check the next live node out instead, meaning
+                  // that only the live list index should be forwarded
+                  else removeChild(get(a[aStart++], -1));
+                }
+    }
+
+    return b;
+  });
+
   const UNMOUNT_SCOPE = Symbol('unmount');
-  const EachBinding = Object.seal({
+  const EachBinding = {
     // dynamic binding properties
     // childrenMap: null,
     // node: null,
@@ -590,8 +453,7 @@
         childrenMap
       } = this;
       const collection = scope === UNMOUNT_SCOPE ? null : this.evaluate(scope);
-      const items = collection ? Array.from(collection) : [];
-      const parent = placeholder.parentNode; // prepare the diffing
+      const items = collection ? Array.from(collection) : []; // prepare the diffing
 
       const {
         newChildrenMap,
@@ -599,15 +461,14 @@
         futureNodes
       } = createPatch(items, scope, parentScope, this); // patch the DOM only if there are new nodes
 
-      domdiff(parent, nodes, futureNodes, {
-        before: placeholder,
-        node: patch(Array.from(childrenMap.values()), parentScope)
-      }); // trigger the mounts and the updates
+      udomdiff(nodes, futureNodes, patch(Array.from(childrenMap.values()), parentScope), placeholder); // trigger the mounts and the updates
 
       batches.forEach(fn => fn()); // update the children map
 
       this.childrenMap = newChildrenMap;
-      this.nodes = futureNodes;
+      this.nodes = futureNodes; // make sure that the loop edge nodes are marked
+
+      markEdgeNodes(this.nodes);
       return this;
     },
 
@@ -616,10 +477,10 @@
       return this;
     }
 
-  });
+  };
   /**
    * Patch the DOM while diffing
-   * @param   {TemplateChunk[]} redundant - redundant tepmplate chunks
+   * @param   {any[]} redundant - list of all the children (template, nodes, context) added via each
    * @param   {*} parentScope - scope of the parent template
    * @returns {Function} patch function used by domdiff
    */
@@ -627,16 +488,25 @@
   function patch(redundant, parentScope) {
     return (item, info) => {
       if (info < 0) {
-        const element = redundant.pop();
+        // get the last element added to the childrenMap saved previously
+        const element = redundant[redundant.length - 1];
 
         if (element) {
+          // get the nodes and the template in stored in the last child of the childrenMap
           const {
             template,
+            nodes,
             context
-          } = element; // notice that we pass null as last argument because
+          } = element; // remove the last node (notice <template> tags might have more children nodes)
+
+          nodes.pop(); // notice that we pass null as last argument because
           // the root node and its children will be removed by domdiff
 
-          template.unmount(context, parentScope, null);
+          if (nodes.length === 0) {
+            // we have cleared all the children nodes and we can unmount this template
+            redundant.pop();
+            template.unmount(context, parentScope, null);
+          }
         }
       }
 
@@ -677,6 +547,19 @@
     return scope;
   }
   /**
+   * Mark the first and last nodes in order to ignore them in case we need to retrieve the <template> fragment nodes
+   * @param {Array[]} nodes - each binding nodes list
+   * @returns {undefined} void function
+   */
+
+
+  function markEdgeNodes(nodes) {
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (first) first[HEAD_SYMBOL] = true;
+    if (last) last[TAIL_SYMBOL] = true;
+  }
+  /**
    * Loop the current template items
    * @param   {Array} items - expression collection value
    * @param   {*} scope - template scope
@@ -712,15 +595,16 @@
       });
       const key = getKey ? getKey(context) : index;
       const oldItem = childrenMap.get(key);
+      const nodes = [];
 
       if (mustFilterItem(condition, context)) {
         return;
       }
 
-      const componentTemplate = oldItem ? oldItem.template : template.clone();
-      const el = oldItem ? componentTemplate.el : root.cloneNode();
       const mustMount = !oldItem;
-      const meta = isTemplateTag && mustMount ? createTemplateMeta(componentTemplate) : {};
+      const componentTemplate = oldItem ? oldItem.template : template.clone();
+      const el = componentTemplate.el || root.cloneNode();
+      const meta = isTemplateTag && mustMount ? createTemplateMeta(componentTemplate) : componentTemplate.meta;
 
       if (mustMount) {
         batches.push(() => componentTemplate.mount(el, context, parentScope, meta));
@@ -731,16 +615,17 @@
 
 
       if (isTemplateTag) {
-        const children = meta.children || componentTemplate.children;
-        futureNodes.push(...children);
+        nodes.push(...(mustMount ? meta.children : getFragmentChildren(meta)));
       } else {
-        futureNodes.push(el);
+        nodes.push(el);
       } // delete the old item from the children map
 
 
-      childrenMap.delete(key); // update the children map
+      childrenMap.delete(key);
+      futureNodes.push(...nodes); // update the children map
 
       newChildrenMap.set(key, {
+        nodes,
         template: componentTemplate,
         context,
         index
@@ -753,7 +638,7 @@
     };
   }
 
-  function create(node, _ref2) {
+  function create$6(node, _ref2) {
     let {
       evaluate,
       condition,
@@ -763,10 +648,9 @@
       template
     } = _ref2;
     const placeholder = document.createTextNode('');
-    const parent = node.parentNode;
     const root = node.cloneNode();
-    parent.insertBefore(placeholder, node);
-    removeNode(node);
+    insertBefore(placeholder, node);
+    removeChild(node);
     return Object.assign({}, EachBinding, {
       childrenMap: new Map(),
       node,
@@ -786,7 +670,7 @@
    * Binding responsible for the `if` directive
    */
 
-  const IfBinding = Object.seal({
+  const IfBinding = {
     // dynamic binding properties
     // node: null,
     // evaluate: null,
@@ -805,7 +689,7 @@
 
       const mount = () => {
         const pristine = this.node.cloneNode();
-        this.placeholder.parentNode.insertBefore(pristine, this.placeholder);
+        insertBefore(pristine, this.placeholder);
         this.template = this.template.clone();
         this.template.mount(pristine, scope, parentScope);
       };
@@ -832,16 +716,15 @@
       return this;
     }
 
-  });
-  function create$1(node, _ref) {
+  };
+  function create$5(node, _ref) {
     let {
       evaluate,
       template
     } = _ref;
-    const parent = node.parentNode;
     const placeholder = document.createTextNode('');
-    parent.insertBefore(placeholder, node);
-    removeNode(node);
+    insertBefore(placeholder, node);
+    removeChild(node);
     return Object.assign({}, IfBinding, {
       node,
       evaluate,
@@ -908,8 +791,6 @@
     }, {});
   }
 
-  const REMOVE_ATTRIBUTE = 'removeAttribute';
-  const SET_ATTIBUTE = 'setAttribute';
   const ElementProto = typeof Element === 'undefined' ? {} : Element.prototype;
   const isNativeHtmlProperty = memoize(name => ElementProto.hasOwnProperty(name)); // eslint-disable-line
 
@@ -921,7 +802,7 @@
    */
 
   function setAllAttributes(node, attributes) {
-    Object.entries(attributes).forEach((_ref) => {
+    Object.entries(attributes).forEach(_ref => {
       let [name, value] = _ref;
       return attributeExpression(node, {
         name
@@ -940,6 +821,26 @@
   function removeAllAttributes(node, newAttributes, oldAttributes) {
     const newKeys = newAttributes ? Object.keys(newAttributes) : [];
     Object.keys(oldAttributes).filter(name => !newKeys.includes(name)).forEach(attribute => node.removeAttribute(attribute));
+  }
+  /**
+   * Check whether the attribute value can be rendered
+   * @param {*} value - expression value
+   * @returns {boolean} true if we can render this attribute value
+   */
+
+
+  function canRenderAttribute(value) {
+    return value === true || ['string', 'number'].includes(typeof value);
+  }
+  /**
+   * Check whether the attribute should be removed
+   * @param {*} value - expression value
+   * @returns {boolean} boolean - true if the attribute can be removed}
+   */
+
+
+  function shouldRemoveAttribute(value) {
+    return isNil(value) || value === false || value === '';
   }
   /**
    * This methods handles the DOM attributes updates
@@ -977,16 +878,11 @@
       node[name] = value;
     }
 
-    node[getMethod(value)](name, normalizeValue(name, value));
-  }
-  /**
-   * Get the attribute modifier method
-   * @param   {*} value - if truthy we return `setAttribute` othewise `removeAttribute`
-   * @returns {string} the node attribute modifier method name
-   */
-
-  function getMethod(value) {
-    return isNil(value) || value === false || value === '' || isObject(value) || isFunction(value) ? REMOVE_ATTRIBUTE : SET_ATTIBUTE;
+    if (shouldRemoveAttribute(value)) {
+      node.removeAttribute(name);
+    } else if (canRenderAttribute(value)) {
+      node.setAttribute(name, normalizeValue(name, value));
+    }
   }
   /**
    * Get the value as string
@@ -994,7 +890,6 @@
    * @param   {*} value - user input value
    * @returns {string} input value as string
    */
-
 
   function normalizeValue(name, value) {
     // be sure that expressions like selected={ true } will be always rendered as selected='selected'
@@ -1111,7 +1006,7 @@
     [VALUE]: valueExpression
   };
 
-  const Expression = Object.seal({
+  const Expression = {
     // Static props
     // node: null,
     // value: null,
@@ -1158,7 +1053,7 @@
       return this;
     }
 
-  });
+  };
   /**
    * IO() function to handle the DOM updates
    * @param {Expression} expression - expression object
@@ -1170,7 +1065,7 @@
     return expressions[expression.type](expression.node, expression, value, expression.value);
   }
 
-  function create$2(node, data) {
+  function create$4(node, data) {
     return Object.assign({}, Expression, data, {
       node: data.type === TEXT ? getTextNode(node, data.childNodeIndex) : node
     });
@@ -1198,32 +1093,8 @@
     let {
       expressions
     } = _ref;
-    return Object.assign({}, flattenCollectionMethods(expressions.map(expression => create$2(node, expression)), ['mount', 'update', 'unmount']));
+    return Object.assign({}, flattenCollectionMethods(expressions.map(expression => create$4(node, expression)), ['mount', 'update', 'unmount']));
   }
-
-  // Riot.js constants that can be used accross more modules
-  const COMPONENTS_IMPLEMENTATION_MAP = new Map(),
-        DOM_COMPONENT_INSTANCE_PROPERTY = Symbol('riot-component'),
-        PLUGINS_SET = new Set(),
-        IS_DIRECTIVE = 'is',
-        MOUNT_METHOD_KEY = 'mount',
-        UPDATE_METHOD_KEY = 'update',
-        UNMOUNT_METHOD_KEY = 'unmount',
-        SHOULD_UPDATE_KEY = 'shouldUpdate',
-        ON_BEFORE_MOUNT_KEY = 'onBeforeMount',
-        ON_MOUNTED_KEY = 'onMounted',
-        ON_BEFORE_UPDATE_KEY = 'onBeforeUpdate',
-        ON_UPDATED_KEY = 'onUpdated',
-        ON_BEFORE_UNMOUNT_KEY = 'onBeforeUnmount',
-        ON_UNMOUNTED_KEY = 'onUnmounted',
-        PROPS_KEY = 'props',
-        STATE_KEY = 'state',
-        SLOTS_KEY = 'slots',
-        ROOT_KEY = 'root',
-        IS_PURE_SYMBOL = Symbol.for('pure'),
-        PARENT_KEY_SYMBOL = Symbol('parent'),
-        ATTRIBUTES_KEY_SYMBOL = Symbol('attributes'),
-        TEMPLATE_KEY_SYMBOL = Symbol('template');
 
   function extendParentScope(attributes, scope, parentScope) {
     if (!attributes || !attributes.length) return parentScope;
@@ -1235,9 +1106,9 @@
   // https://github.com/riot/riot/issues/2842
 
 
-  const getRealParent = (scope, parentScope) => parentScope ? parentScope === scope ? scope[PARENT_KEY_SYMBOL] : parentScope : undefined;
+  const getRealParent = (scope, parentScope) => scope[PARENT_KEY_SYMBOL] || parentScope;
 
-  const SlotBinding = Object.seal({
+  const SlotBinding = {
     // dynamic binding properties
     // node: null,
     // name: null,
@@ -1250,7 +1121,7 @@
 
     // API methods
     mount(scope, parentScope) {
-      const templateData = scope.slots ? scope.slots.find((_ref) => {
+      const templateData = scope.slots ? scope.slots.find(_ref => {
         let {
           id
         } = _ref;
@@ -1260,14 +1131,15 @@
         parentNode
       } = this.node;
       const realParent = getRealParent(scope, parentScope);
-      this.template = templateData && create$6(templateData.html, templateData.bindings).createDOM(parentNode);
+      this.template = templateData && create(templateData.html, templateData.bindings).createDOM(parentNode);
 
       if (this.template) {
         this.template.mount(this.node, this.getTemplateScope(scope, realParent), realParent);
-        this.template.children = moveSlotInnerContent(this.node);
+        this.template.children = Array.from(this.node.childNodes);
+        moveSlotInnerContent(this.node);
       }
 
-      removeNode(this.node);
+      removeChild(this.node);
       return this;
     },
 
@@ -1288,27 +1160,18 @@
       return this;
     }
 
-  });
+  };
   /**
    * Move the inner content of the slots outside of them
-   * @param   {HTMLNode} slot - slot node
-   * @param   {HTMLElement} children - array to fill with the child nodes detected
-   * @returns {HTMLElement[]} list of the node moved
+   * @param   {HTMLElement} slot - slot node
+   * @returns {undefined} it's a void method ¯\_(ツ)_/¯
    */
 
-  function moveSlotInnerContent(slot, children) {
-    if (children === void 0) {
-      children = [];
-    }
-
-    const child = slot.firstChild;
-
-    if (child) {
-      slot.parentNode.insertBefore(child, slot);
-      return [child, ...moveSlotInnerContent(slot)];
-    }
-
-    return children;
+  function moveSlotInnerContent(slot) {
+    const child = slot && slot.firstChild;
+    if (!child) return;
+    insertBefore(child, slot);
+    moveSlotInnerContent(slot);
   }
   /**
    * Create a single slot binding
@@ -1357,7 +1220,7 @@
     } // otherwise we return a template chunk
 
 
-    return create$6(slotsToMarkup(slots), [...slotBindings(slots), {
+    return create(slotsToMarkup(slots), [...slotBindings(slots), {
       // the attributes should be registered as binding
       // if we fallback to a normal template chunk
       expressions: attributes.map(attr => {
@@ -1395,7 +1258,7 @@
     }, '');
   }
 
-  const TagBinding = Object.seal({
+  const TagBinding = {
     // dynamic binding properties
     // node: null,
     // evaluate: null,
@@ -1411,7 +1274,7 @@
     update(scope, parentScope) {
       const name = this.evaluate(scope); // simple update
 
-      if (name === this.name) {
+      if (name && name === this.name) {
         this.tag.update(scope);
       } else {
         // unmount the old tag if it exists
@@ -1434,8 +1297,8 @@
       return this;
     }
 
-  });
-  function create$4(node, _ref2) {
+  };
+  function create$2(node, _ref2) {
     let {
       evaluate,
       getComponent,
@@ -1452,10 +1315,10 @@
   }
 
   var bindings = {
-    [IF]: create$1,
+    [IF]: create$5,
     [SIMPLE]: create$3,
-    [EACH]: create,
-    [TAG]: create$4,
+    [EACH]: create$6,
+    [TAG]: create$2,
     [SLOT]: createSlot
   };
 
@@ -1481,7 +1344,7 @@
    */
 
 
-  function create$5(root, binding, templateTagOffset) {
+  function create$1(root, binding, templateTagOffset) {
     const {
       selector,
       type,
@@ -1632,8 +1495,10 @@
 
       if (!avoidDOMInjection && this.fragment) injectDOM(el, this.fragment); // create the bindings
 
-      this.bindings = this.bindingsData.map(binding => create$5(this.el, binding, templateTagOffset));
-      this.bindings.forEach(b => b.mount(scope, parentScope));
+      this.bindings = this.bindingsData.map(binding => create$1(this.el, binding, templateTagOffset));
+      this.bindings.forEach(b => b.mount(scope, parentScope)); // store the template meta properties
+
+      this.meta = meta;
       return this;
     },
 
@@ -1661,16 +1526,20 @@
         this.bindings.forEach(b => b.unmount(scope, parentScope, mustRemoveRoot));
 
         switch (true) {
+          // pure components should handle the DOM unmount updates by themselves
+          case this.el[IS_PURE_SYMBOL]:
+            break;
           // <template> tags should be treated a bit differently
           // we need to clear their children only if it's explicitly required by the caller
           // via mustRemoveRoot !== null
+
           case this.children && mustRemoveRoot !== null:
             clearChildren(this.children);
             break;
           // remove the root node only if the mustRemoveRoot === true
 
           case mustRemoveRoot === true:
-            removeNode(this.el);
+            removeChild(this.el);
             break;
           // otherwise we clean the node children
 
@@ -1691,6 +1560,7 @@
      */
     clone() {
       return Object.assign({}, this, {
+        meta: {},
         el: null
       });
     }
@@ -1703,7 +1573,7 @@
    * @returns {TemplateChunk} a new TemplateChunk copy
    */
 
-  function create$6(html, bindings) {
+  function create(html, bindings) {
     if (bindings === void 0) {
       bindings = [];
     }
@@ -1773,7 +1643,7 @@
    */
 
   function defineProperties(source, properties, options) {
-    Object.entries(properties).forEach((_ref) => {
+    Object.entries(properties).forEach(_ref => {
       let [key, value] = _ref;
       defineProperty(source, key, value, options);
     });
@@ -1787,7 +1657,7 @@
    */
 
   function defineDefaults(source, defaults) {
-    Object.entries(defaults).forEach((_ref2) => {
+    Object.entries(defaults).forEach(_ref2 => {
       let [key, value] = _ref2;
       if (!source[key]) source[key] = value;
     });
@@ -2037,6 +1907,13 @@
     createDOM: noop
   });
   /**
+   * Performance optimization for the recursive components
+   * @param  {RiotComponentShell} componentShell - riot compiler generated object
+   * @returns {Object} component like interface
+   */
+
+  const memoizedCreateComponent = memoize(createComponent);
+  /**
    * Evaluate the component properties either from its real attributes or from its initial user properties
    * @param   {HTMLElement} element - component root
    * @param   {Object}  initialProps - initial props
@@ -2058,7 +1935,7 @@
    */
 
 
-  const bindDOMNodeToComponentObject = (node, component) => node[DOM_COMPONENT_INSTANCE_PROPERTY] = component;
+  const bindDOMNodeToComponentObject = (node, component) => node[DOM_COMPONENT_INSTANCE_PROPERTY$1] = component;
   /**
    * Wrap the Riot.js core API methods using a mapping function
    * @param   {Function} mapFunction - lifting function
@@ -2075,14 +1952,18 @@
   /**
    * Factory function to create the component templates only once
    * @param   {Function} template - component template creation function
-   * @param   {Object} components - object containing the nested components
+   * @param   {RiotComponentShell} componentShell - riot compiler generated object
    * @returns {TemplateChunk} template chunk object
    */
 
 
-  function componentTemplateFactory(template, components) {
-    return template(create$6, expressionTypes, bindingTypes, name => {
-      return components[name] || COMPONENTS_IMPLEMENTATION_MAP.get(name);
+  function componentTemplateFactory(template, componentShell) {
+    const components = createSubcomponents(componentShell.exports ? componentShell.exports.components : {});
+    return template(create, expressionTypes, bindingTypes, name => {
+      // improve support for recursive components
+      if (name === componentShell.name) return memoizedCreateComponent(componentShell); // return the registered components
+
+      return components[name] || COMPONENTS_IMPLEMENTATION_MAP$1.get(name);
     });
   }
   /**
@@ -2120,7 +2001,9 @@
       // intercept the mount calls to bind the DOM node to the pure object created
       // see also https://github.com/riot/riot/issues/2806
       if (method === MOUNT_METHOD_KEY) {
-        const [el] = args;
+        const [el] = args; // mark this node as pure element
+
+        el[IS_PURE_SYMBOL] = true;
         bindDOMNodeToComponentObject(el, component);
       }
 
@@ -2130,28 +2013,29 @@
   }
   /**
    * Create the component interface needed for the @riotjs/dom-bindings tag bindings
-   * @param   {string} options.css - component css
-   * @param   {Function} options.template - functon that will return the dom-bindings template function
-   * @param   {Object} options.exports - component interface
-   * @param   {string} options.name - component name
+   * @param   {RiotComponentShell} componentShell - riot compiler generated object
+   * @param   {string} componentShell.css - component css
+   * @param   {Function} componentShell.template - function that will return the dom-bindings template function
+   * @param   {Object} componentShell.exports - component interface
+   * @param   {string} componentShell.name - component name
    * @returns {Object} component like interface
    */
 
 
-  function createComponent(_ref2) {
-    let {
+  function createComponent(componentShell) {
+    const {
       css,
       template,
       exports,
       name
-    } = _ref2;
-    const templateFn = template ? componentTemplateFactory(template, exports ? createSubcomponents(exports.components) : {}) : MOCKED_TEMPLATE_INTERFACE;
-    return (_ref3) => {
+    } = componentShell;
+    const templateFn = template ? componentTemplateFactory(template, componentShell) : MOCKED_TEMPLATE_INTERFACE;
+    return _ref2 => {
       let {
         slots,
         attributes,
         props
-      } = _ref3;
+      } = _ref2;
       // pure components rendering will be managed by the end user
       if (exports && exports[IS_PURE_SYMBOL]) return createPureComponent(exports, {
         slots,
@@ -2198,17 +2082,18 @@
    * @returns {Object} a new component implementation object
    */
 
-  function defineComponent(_ref4) {
+  function defineComponent(_ref3) {
     let {
       css,
       template,
       componentAPI,
       name
-    } = _ref4;
+    } = _ref3;
     // add the component css into the DOM
     if (css && name) cssManager.add(name, css);
     return curry(enhanceComponentAPI)(defineProperties( // set the component defaults without overriding the original component API
     defineDefaults(componentAPI, Object.assign({}, COMPONENT_LIFECYCLE_METHODS, {
+      [PROPS_KEY]: {},
       [STATE_KEY]: {}
     })), Object.assign({
       // defined during the component creation
@@ -2232,7 +2117,7 @@
       attributes = [];
     }
 
-    const expressions = attributes.map(a => create$2(node, a));
+    const expressions = attributes.map(a => create$4(node, a));
     const binding = {};
     return Object.assign(binding, Object.assign({
       expressions
@@ -2253,8 +2138,8 @@
       components = {};
     }
 
-    return Object.entries(callOrAssign(components)).reduce((acc, _ref5) => {
-      let [key, value] = _ref5;
+    return Object.entries(callOrAssign(components)).reduce((acc, _ref4) => {
+      let [key, value] = _ref4;
       acc[camelToDashCase(key)] = createComponent(value);
       return acc;
     }, {});
@@ -2267,7 +2152,7 @@
 
 
   function runPlugins(component) {
-    return [...PLUGINS_SET].reduce((c, fn) => fn(c) || c, component);
+    return [...PLUGINS_SET$1].reduce((c, fn) => fn(c) || c, component);
   }
   /**
    * Compute the component current state merging it with its previous state
@@ -2302,18 +2187,19 @@
    */
 
 
-  function enhanceComponentAPI(component, _ref6) {
+  function enhanceComponentAPI(component, _ref5) {
     let {
       slots,
       attributes,
       props
-    } = _ref6;
-    return autobindMethods(runPlugins(defineProperties(Object.create(component), {
+    } = _ref5;
+    return autobindMethods(runPlugins(defineProperties(isObject(component) ? Object.create(component) : component, {
       mount(element, state, parentScope) {
         if (state === void 0) {
           state = {};
         }
 
+        this[PARENT_KEY_SYMBOL] = parentScope;
         this[ATTRIBUTES_KEY_SYMBOL] = createAttributeBindings(element, attributes).mount(parentScope);
         defineProperty(this, PROPS_KEY, Object.freeze(Object.assign({}, evaluateInitialProps(element, props), evaluateAttributeExpressions(this[ATTRIBUTES_KEY_SYMBOL].expressions))));
         this[STATE_KEY] = computeState(this[STATE_KEY], state);
@@ -2327,8 +2213,7 @@
 
         defineProperty(this, SLOTS_KEY, slots); // before mount lifecycle event
 
-        this[ON_BEFORE_MOUNT_KEY](this[PROPS_KEY], this[STATE_KEY]);
-        this[PARENT_KEY_SYMBOL] = parentScope; // mount the template
+        this[ON_BEFORE_MOUNT_KEY](this[PROPS_KEY], this[STATE_KEY]); // mount the template
 
         this[TEMPLATE_KEY_SYMBOL].mount(element, this, parentScope);
         this[ON_MOUNTED_KEY](this[PROPS_KEY], this[STATE_KEY]);
@@ -2349,9 +2234,16 @@
         if (this[SHOULD_UPDATE_KEY](newProps, this[PROPS_KEY]) === false) return;
         defineProperty(this, PROPS_KEY, Object.freeze(Object.assign({}, this[PROPS_KEY], newProps)));
         this[STATE_KEY] = computeState(this[STATE_KEY], state);
-        this[ON_BEFORE_UPDATE_KEY](this[PROPS_KEY], this[STATE_KEY]);
-        this[TEMPLATE_KEY_SYMBOL].update(this, this[PARENT_KEY_SYMBOL]);
+        this[ON_BEFORE_UPDATE_KEY](this[PROPS_KEY], this[STATE_KEY]); // avoiding recursive updates
+        // see also https://github.com/riot/riot/issues/2895
+
+        if (!this[IS_COMPONENT_UPDATING]) {
+          this[IS_COMPONENT_UPDATING] = true;
+          this[TEMPLATE_KEY_SYMBOL].update(this, this[PARENT_KEY_SYMBOL]);
+        }
+
         this[ON_UPDATED_KEY](this[PROPS_KEY], this[STATE_KEY]);
+        this[IS_COMPONENT_UPDATING] = false;
         return this;
       },
 
@@ -2434,53 +2326,83 @@
       }
     },
 
-    'template': function(template, expressionTypes, bindingTypes, getComponent) {
-      return template('<h2>Riot Color Palette</h2><div expr1="expr1"></div>', [{
-        'type': bindingTypes.EACH,
-        'getKey': null,
-        'condition': null,
+    'template': function(
+      template,
+      expressionTypes,
+      bindingTypes,
+      getComponent
+    ) {
+      return template(
+        '<h2>Riot Color Palette</h2><div expr1="expr1"></div>',
+        [
+          {
+            'type': bindingTypes.EACH,
+            'getKey': null,
+            'condition': null,
 
-        'template': template(null, [{
-          'expressions': [{
-            'type': expressionTypes.ATTRIBUTE,
-            'name': 'data-color',
+            'template': template(
+              null,
+              [
+                {
+                  'expressions': [
+                    {
+                      'type': expressionTypes.ATTRIBUTE,
+                      'name': 'data-color',
 
-            'evaluate': function(scope) {
-              return scope.c;
+                      'evaluate': function(
+                        scope
+                      ) {
+                        return scope.c;
+                      }
+                    },
+                    {
+                      'type': expressionTypes.ATTRIBUTE,
+                      'name': 'style',
+
+                      'evaluate': function(
+                        scope
+                      ) {
+                        return `background: ${scope.c};`;
+                      }
+                    },
+                    {
+                      'type': expressionTypes.ATTRIBUTE,
+                      'name': 'class',
+
+                      'evaluate': function(
+                        scope
+                      ) {
+                        return scope.c === scope.props.value && scope.selected;
+                      }
+                    },
+                    {
+                      'type': expressionTypes.EVENT,
+                      'name': 'onclick',
+
+                      'evaluate': function(
+                        scope
+                      ) {
+                        return scope.props.handleClick;
+                      }
+                    }
+                  ]
+                }
+              ]
+            ),
+
+            'redundantAttribute': 'expr1',
+            'selector': '[expr1]',
+            'itemName': 'c',
+            'indexName': null,
+
+            'evaluate': function(
+              scope
+            ) {
+              return scope.colors;
             }
-          }, {
-            'type': expressionTypes.ATTRIBUTE,
-            'name': 'style',
-
-            'evaluate': function(scope) {
-              return `background: ${scope.c};`;
-            }
-          }, {
-            'type': expressionTypes.ATTRIBUTE,
-            'name': 'class',
-
-            'evaluate': function(scope) {
-              return scope.c === scope.props.value && scope.selected;
-            }
-          }, {
-            'type': expressionTypes.EVENT,
-            'name': 'onclick',
-
-            'evaluate': function(scope) {
-              return scope.props.handleClick;
-            }
-          }]
-        }]),
-
-        'redundantAttribute': 'expr1',
-        'selector': '[expr1]',
-        'itemName': 'c',
-        'indexName': null,
-
-        'evaluate': function(scope) {
-          return scope.colors;
-        }
-      }]);
+          }
+        ]
+      );
     },
 
     'name': 'color-palette'
@@ -2502,45 +2424,69 @@
       }
     },
 
-    'template': function(template, expressionTypes, bindingTypes, getComponent) {
-      return template('<color-palette expr0="expr0"></color-palette><p>Click the color.</p>', [{
-        'expressions': [{
-          'type': expressionTypes.ATTRIBUTE,
-          'name': 'style',
+    'template': function(
+      template,
+      expressionTypes,
+      bindingTypes,
+      getComponent
+    ) {
+      return template(
+        '<color-palette expr0="expr0"></color-palette><p>Click the color.</p>',
+        [
+          {
+            'expressions': [
+              {
+                'type': expressionTypes.ATTRIBUTE,
+                'name': 'style',
 
-          'evaluate': function(scope) {
-            return `background: ${ scope.selectedColor }`;
+                'evaluate': function(
+                  scope
+                ) {
+                  return `background: ${ scope.selectedColor }`;
+                }
+              }
+            ]
+          },
+          {
+            'type': bindingTypes.TAG,
+            'getComponent': getComponent,
+
+            'evaluate': function(
+              scope
+            ) {
+              return 'color-palette';
+            },
+
+            'slots': [],
+
+            'attributes': [
+              {
+                'type': expressionTypes.ATTRIBUTE,
+                'name': 'value',
+
+                'evaluate': function(
+                  scope
+                ) {
+                  return scope.selectedColor;
+                }
+              },
+              {
+                'type': expressionTypes.ATTRIBUTE,
+                'name': 'handle-click',
+
+                'evaluate': function(
+                  scope
+                ) {
+                  return scope.change;
+                }
+              }
+            ],
+
+            'redundantAttribute': 'expr0',
+            'selector': '[expr0]'
           }
-        }]
-      }, {
-        'type': bindingTypes.TAG,
-        'getComponent': getComponent,
-
-        'evaluate': function(scope) {
-          return 'color-palette';
-        },
-
-        'slots': [],
-
-        'attributes': [{
-          'type': expressionTypes.ATTRIBUTE,
-          'name': 'value',
-
-          'evaluate': function(scope) {
-            return scope.selectedColor;
-          }
-        }, {
-          'type': expressionTypes.ATTRIBUTE,
-          'name': 'handle-click',
-
-          'evaluate': function(scope) {
-            return scope.change;
-          }
-        }],
-
-        'redundantAttribute': 'expr0',
-        'selector': '[expr0]'
-      }]);
+        ]
+      );
     },
 
     'name': 'app'
