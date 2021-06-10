@@ -1,13 +1,14 @@
 {
-  "name": "hnpwa",
+  "name": "my-pwa-sample-with-riotjs",
   "version": "1.0.0",
-  "description": "",
-  "main": "mixin.js",
+  "description": "my pwa sample with riotjs",
+  "main": "main.js",
   "dependencies": {
     "chokidar-cli": "^2.1.0",
     "riot": "^5.4.4"
   },
   "devDependencies": {
+    "@riotjs/hot-reload": "^5.0.0",
     "@rollup/plugin-commonjs": "^19.0.0",
     "@rollup/plugin-node-resolve": "^13.0.0",
     "browser-sync": "^2.26.14",
@@ -18,13 +19,15 @@
   },
   "scripts": {
     "start": "npm run watch & npm run server",
-    "build": "npm run build:html | npm run build:js",
+    "build": "rm public/bundle.js && npm run build:js",
     "build:js": "rollup -c",
-    "build:html": "cp index.html public/",
     "watch": "chokidar 'src/**' -c 'npm run build'",
-    "server": "browser-sync start --files 'public/*, public/index.html' --server"
+    "server": "browser-sync start --files 'public/*' --server"
   },
-  "keywords": [],
-  "author": "k-kuwahara",
+  "keywords": [
+    "riotjs",
+    "pwa"
+  ],
+  "author": "kkeeth",
   "license": "MIT"
 }

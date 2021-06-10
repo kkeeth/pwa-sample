@@ -30,6 +30,13 @@
   dependencies:
     "@riotjs/util" "^2.0.3"
 
+"@riotjs/hot-reload@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@riotjs/hot-reload/-/hot-reload-5.0.0.tgz#3537e2eb43470a52ad64121715f4ccdce7d6e789"
+  integrity sha512-z3JN1ArGiZQaT5FHBy80m5ToSzLJAbI8Mj8gBWj4ITXbfLz4kuzUiWog2uqRophvZu2Oxwvp5cEtyOtoKkvciQ==
+  dependencies:
+    bianco.query "^1.0.0"
+
 "@riotjs/parser@^4.3.1":
   version "4.3.1"
   resolved "https://registry.yarnpkg.com/@riotjs/parser/-/parser-4.3.1.tgz#276ee876afe98c99f1e185efe572fc92e3c73dce"
