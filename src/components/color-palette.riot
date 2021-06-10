@@ -1,4 +1,5 @@
 <color-palette>
+  <h2>Riot Color Palette</h2>
   <div
     each={ c in colors }
     data-color={ c }
@@ -28,10 +29,11 @@
   <style>
     :host {
       display: inline-block;
-      padding: .5em;
+      padding: 1rem;
       line-height: 0;
       background: white;
       transition: box-shadow .2s;
+      border-radius: 8px;
     }
     :host:hover {
       box-shadow: 0 1px 5px rgba(0,0,0,.5);

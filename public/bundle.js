@@ -2414,7 +2414,7 @@
   }
 
   var ColorPalette = {
-    'css': `color-palette,[is="color-palette"]{ display: inline-block; padding: .5em; line-height: 0; background: white; transition: box-shadow .2s; } color-palette:hover,[is="color-palette"]:hover{ box-shadow: 0 1px 5px rgba(0,0,0,.5); } color-palette div,[is="color-palette"] div{ display: inline-block; width: 2.8em; height: 2.8em; position: relative; cursor: pointer; z-index: 1; box-sizing: border-box; -moz-box-sizing: border-box; transition: box-shadow .2s; } color-palette div:hover,[is="color-palette"] div:hover{ z-index: 2; box-shadow: 0 2px 10px rgba(0,0,0,.5); } color-palette div:hover,[is="color-palette"] div:hover,color-palette div.selected,[is="color-palette"] div.selected{ border: 3px solid rgba(255,255,255,.7); }`,
+    'css': `color-palette,[is="color-palette"]{ display: inline-block; padding: 1rem; line-height: 0; background: white; transition: box-shadow .2s; border-radius: 8px; } color-palette:hover,[is="color-palette"]:hover{ box-shadow: 0 1px 5px rgba(0,0,0,.5); } color-palette div,[is="color-palette"] div{ display: inline-block; width: 2.8em; height: 2.8em; position: relative; cursor: pointer; z-index: 1; box-sizing: border-box; -moz-box-sizing: border-box; transition: box-shadow .2s; } color-palette div:hover,[is="color-palette"] div:hover{ z-index: 2; box-shadow: 0 2px 10px rgba(0,0,0,.5); } color-palette div:hover,[is="color-palette"] div:hover,color-palette div.selected,[is="color-palette"] div.selected{ border: 3px solid rgba(255,255,255,.7); }`,
 
     'exports': {
       colors: [
@@ -2435,7 +2435,7 @@
     },
 
     'template': function(template, expressionTypes, bindingTypes, getComponent) {
-      return template('<div expr1="expr1"></div>', [{
+      return template('<h2>Riot Color Palette</h2><div expr1="expr1"></div>', [{
         'type': bindingTypes.EACH,
         'getKey': null,
         'condition': null,
