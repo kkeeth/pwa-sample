@@ -1,33 +1,29 @@
 # PWA Sample with Riot.js
-It is a sample repository for the following study group.
 
-https://supporterzcolab.com/event/439/
-
-# Usage
+## Usage
 
 ```bash
 # preparing the environment
-$ git clone hoge
-$ cd hoge
-$ npm i
+$ git clone git@github.com:kkeeth/pwa-sample.git
+
+# install packages
+$ yarn
 
 # build
-$ npm run build
+$ yarn build
 
 # boot app
-$ npm run server
+$ yarn server
 
 # boot app & development
-$ npm start
+$ yarn start
 
 # development
-$ npm run watch
+$ yarn watch
 ```
 
-After open this url http://localhost:3000/public/
+After open this url http://localhost:3000
 
 ※ The port number may change.
 
 I use this application as it is.
-
-https://next.plnkr.co/edit/?p=preview&preview
