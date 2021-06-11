@@ -19,9 +19,8 @@
   },
   "scripts": {
     "start": "npm run watch & npm run server",
-    "build": "npm run build:js && npm run build:html",
-    "build:html": "rm -f docs/index.html && cp index.html docs",
-    "build:js": "rm -f docs/bundle.js && rollup -c",
+    "build": "rm -f docs/bundle.js && npm run build:js",
+    "build:js": "rollup -c",
     "watch": "chokidar 'src/**' -c 'npm run build'",
     "server": "browser-sync start --files 'docs/*, index.html' --server"
   },
