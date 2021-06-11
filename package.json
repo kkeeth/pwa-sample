@@ -22,7 +22,7 @@
     "build": "rm public/bundle.js && npm run build:js",
     "build:js": "rollup -c",
     "watch": "chokidar 'src/**' -c 'npm run build'",
-    "server": "browser-sync start --files 'public/*' --server"
+    "server": "browser-sync start --files 'public/*, index.html' --server"
   },
   "keywords": [
     "riotjs",
